@@ -124,7 +124,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
   import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
 
-  // Your Firebase config here
+  
   const firebaseConfig = {
     apiKey: "AIzaSyDyVDqDWE_FOOhf0i0Fx2t1UV5DDjHmOQM",
     authDomain: "learning-16286.firebaseapp.com",
@@ -139,7 +139,7 @@
   const db = getDatabase(app);
   const scoresRef = ref(db, "quizScores");
 
-  // Quiz questions
+  
   const questions = [
     {
       question: "What is the capital of India?",
@@ -168,7 +168,7 @@
     }
   ];
 
-  // DOM elements
+  
   const startScreen = document.getElementById("start-screen");
   const quizScreen = document.getElementById("quiz-screen");
   const scoreScreen = document.getElementById("score-screen");
@@ -272,7 +272,7 @@
         leaderboardList.innerHTML = "<li>No scores yet.</li>";
         return;
       }
-      // Sort descending by score
+    
       const sortedScores = Object.values(data)
         .sort((a, b) => b.score - a.score);
 
@@ -289,7 +289,7 @@
     });
   }
 
-  // Show start screen initially
+
   startScreen.style.display = "block";
 </script>
 
