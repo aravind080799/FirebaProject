@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Online Quiz with Leaderboard</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #333;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 30px 0;
+  }
+  .container {
+    background: white;
+    border-radius: 12px;
+    width: 400px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    padding: 20px 30px;
+  }
+  h2 {
+    text-align: center;
+    color: #764ba2;
+  }
+  #start-screen, #quiz-screen, #score-screen {
+    display: none;
+  }
+  .btn {
+    background: #764ba2;
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: 8px;
+    margin-top: 15px;
+    width: 100%;
+  }
+  .btn:hover {
+    background: #5a357a;
+  }
+  .option {
+    background: #f1f1f1;
+    margin: 8px 0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .option:hover {
+    background: #ddd;
+  }
+  .option.correct {
+    background: #4caf50;
+    color: white;
+  }
+  .option.wrong {
+    background: #f44336;
+    color: white;
+  }
+  #leaderboard {
+    margin-top: 20px;
+  }
+  #leaderboard h3 {
+    margin-bottom: 10px;
+    color: #764ba2;
+  }
+  #leaderboard ul {
+    list-style-type: none;
+    padding-left: 0;
+  }
+  #leaderboard li {
+    padding: 6px 8px;
+    border-bottom: 1px solid #ddd;
+  }
+  #leaderboard li span.score {
+    float: right;
+    font-weight: bold;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    font-size: 1rem;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div id="start-screen">
+    <h2>Welcome to the Quiz</h2>
+    <input type="text" id="userName" placeholder="Enter your name" />
+    <button class="btn" id="startBtn">Start Quiz</button>
+  </div>
+
+  <div id="quiz-screen">
+    <h2 id="questionText"></h2>
+    <div id="optionsContainer"></div>
+    <button class="btn" id="nextBtn" disabled>Next</button>
+  </div>
+
+  <div id="score-screen">
+    <h2>Your Score: <span id="finalScore"></span></h2>
+    <button class="btn" id="restartBtn">Restart Quiz</button>
+
+    <div id="leaderboard">
+      <h3>Leaderboard</h3>
+      <ul id="leaderboardList"></ul>
+    </div>
+  </div>
+
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
+  import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
+
+  // Your Firebase config here
+  const firebaseConfig = {
+    apiKey: "AIzaSyDyVDqDWE_FOOhf0i0Fx2t1UV5DDjHmOQM",
+    authDomain: "learning-16286.firebaseapp.com",
+    databaseURL: "https://learning-16286-default-rtdb.firebaseio.com",
+    projectId: "learning-16286",
+    storageBucket: "learning-16286.appspot.com",
+    messagingSenderId: "784958846396",
+    appId: "1:784958846396:web:8b1b64914e7c3ba73867b9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const scoresRef = ref(db, "quizScores");
+
+  // Quiz questions
+  const questions = [
+    {
+      question: "What is the capital of India?",
+      options: ["Mumbai", "Delhi", "Chennai", "Kolkata"],
+      answer: "Delhi"
+    },
+    {
+      question: "Which planet is known as the Red Planet?",
+      options: ["Earth", "Venus", "Mars", "Jupiter"],
+      answer: "Mars"
+    },
+    {
+      question: "Who wrote 'Hamlet'?",
+      options: ["Charles Dickens", "William Shakespeare", "Leo Tolstoy", "Mark Twain"],
+      answer: "William Shakespeare"
+    },
+    {
+      question: "What is 5 + 7?",
+      options: ["10", "11", "12", "13"],
+      answer: "12"
+    },
+    {
+      question: "Which language runs in a web browser?",
+      options: ["Java", "C", "Python", "JavaScript"],
+      answer: "JavaScript"
+    }
+  ];
+
+  // DOM elements
+  const startScreen = document.getElementById("start-screen");
+  const quizScreen = document.getElementById("quiz-screen");
+  const scoreScreen = document.getElementById("score-screen");
+  const userNameInput = document.getElementById("userName");
+  const startBtn = document.getElementById("startBtn");
+  const questionText = document.getElementById("questionText");
+  const optionsContainer = document.getElementById("optionsContainer");
+  const nextBtn = document.getElementById("nextBtn");
+  const finalScoreSpan = document.getElementById("finalScore");
+  const restartBtn = document.getElementById("restartBtn");
+  const leaderboardList = document.getElementById("leaderboardList");
+
+  let currentQuestionIndex = 0;
+  let score = 0;
+  let userName = "";
+
+  startBtn.addEventListener("click", () => {
+    userName = userNameInput.value.trim();
+    if (!userName) {
+      alert("Please enter your name to start!");
+      return;
+    }
+    startScreen.style.display = "none";
+    quizScreen.style.display = "block";
+    showQuestion();
+  });
+
+  function showQuestion() {
+    nextBtn.disabled = true;
+    const q = questions[currentQuestionIndex];
+    questionText.textContent = q.question;
+    optionsContainer.innerHTML = "";
+
+    q.options.forEach(option => {
+      const div = document.createElement("div");
+      div.classList.add("option");
+      div.textContent = option;
+      div.addEventListener("click", () => selectOption(div, q.answer));
+      optionsContainer.appendChild(div);
+    });
+  }
+
+  function selectOption(selectedDiv, correctAnswer) {
+    // Disable all options
+    Array.from(optionsContainer.children).forEach(opt => {
+      opt.style.pointerEvents = "none";
+      if (opt.textContent === correctAnswer) {
+        opt.classList.add("correct");
+      }
+    });
+
+    if (selectedDiv.textContent === correctAnswer) {
+      score++;
+      selectedDiv.classList.add("correct");
+    } else {
+      selectedDiv.classList.add("wrong");
+    }
+    nextBtn.disabled = false;
+  }
+
+  nextBtn.addEventListener("click", () => {
+    currentQuestionIndex++;
+    if (currentQuestionIndex >= questions.length) {
+      finishQuiz();
+    } else {
+      showQuestion();
+    }
+  });
+
+  function finishQuiz() {
+    quizScreen.style.display = "none";
+    scoreScreen.style.display = "block";
+    finalScoreSpan.textContent = `${score} / ${questions.length}`;
+    saveScoreToFirebase(userName, score);
+    loadLeaderboard();
+  }
+
+  restartBtn.addEventListener("click", () => {
+    currentQuestionIndex = 0;
+    score = 0;
+    userNameInput.value = "";
+    scoreScreen.style.display = "none";
+    startScreen.style.display = "block";
+  });
+
+  function saveScoreToFirebase(name, score) {
+    push(scoresRef, {
+      name,
+      score,
+      timestamp: Date.now()
+    });
+  }
+
+  function loadLeaderboard() {
+    leaderboardList.innerHTML = "Loading...";
+    // Get top 5 scores ordered by score descending
+    const topScoresQuery = query(scoresRef, orderByChild("score"), limitToLast(5));
+    onValue(topScoresQuery, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        leaderboardList.innerHTML = "<li>No scores yet.</li>";
+        return;
+      }
+      // Sort descending by score
+      const sortedScores = Object.values(data)
+        .sort((a, b) => b.score - a.score);
+
+      leaderboardList.innerHTML = "";
+      sortedScores.forEach(({ name, score }) => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        const span = document.createElement("span");
+        span.textContent = score;
+        span.classList.add("score");
+        li.appendChild(span);
+        leaderboardList.appendChild(li);
+      });
+    });
+  }
+
+  // Show start screen initially
+  startScreen.style.display = "block";
+</script>
+
+</body>
+</html>
