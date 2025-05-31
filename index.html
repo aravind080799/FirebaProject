@@ -5,91 +5,138 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Online Quiz with Leaderboard</title>
 <style>
-  body {
-    font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: #333;
-    min-height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 30px 0;
+ body {
+  font-family: 'Segoe UI', sans-serif;
+  background: url('https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1920&q=80') no-repeat center center/cover;
+  color: #333;
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 30px 0;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Optional gradient overlay for better readability */
+body::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 0;
+}
+
+/* Glassmorphism container */
+.container {
+  position: relative;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  width: 400px;
+  padding: 30px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 1s ease-in-out;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  .container {
-    background: white;
-    border-radius: 12px;
-    width: 400px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    padding: 20px 30px;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  h2 {
-    text-align: center;
-    color: #764ba2;
-  }
-  #start-screen, #quiz-screen, #score-screen {
-    display: none;
-  }
-  .btn {
-    background: #764ba2;
-    border: none;
-    color: white;
-    padding: 12px 20px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
-    border-radius: 8px;
-    margin-top: 15px;
-    width: 100%;
-  }
-  .btn:hover {
-    background: #5a357a;
-  }
-  .option {
-    background: #f1f1f1;
-    margin: 8px 0;
-    padding: 10px 15px;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-  .option:hover {
-    background: #ddd;
-  }
-  .option.correct {
-    background: #4caf50;
-    color: white;
-  }
-  .option.wrong {
-    background: #f44336;
-    color: white;
-  }
-  #leaderboard {
-    margin-top: 20px;
-  }
-  #leaderboard h3 {
-    margin-bottom: 10px;
-    color: #764ba2;
-  }
-  #leaderboard ul {
-    list-style-type: none;
-    padding-left: 0;
-  }
-  #leaderboard li {
-    padding: 6px 8px;
-    border-bottom: 1px solid #ddd;
-  }
-  #leaderboard li span.score {
-    float: right;
-    font-weight: bold;
-  }
-  input[type="text"] {
-    width: 100%;
-    padding: 12px;
-    font-size: 1rem;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-  }
+}
+
+h2 {
+  text-align: center;
+  color: #ffffff;
+  font-size: 1.8rem;
+}
+
+.btn {
+  background: #764ba2;
+  border: none;
+  color: white;
+  padding: 12px 20px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  border-radius: 8px;
+  margin-top: 15px;
+  width: 100%;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background: #5a357a;
+}
+
+.option {
+  background: #ffffffdd;
+  margin: 8px 0;
+  padding: 10px 15px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.option:hover {
+  background: #eeeeee;
+  transform: scale(1.02);
+}
+
+.option.correct {
+  background: #4caf50 !important;
+  color: white;
+}
+
+.option.wrong {
+  background: #f44336 !important;
+  color: white;
+}
+
+#leaderboard {
+  margin-top: 20px;
+}
+
+#leaderboard h3 {
+  margin-bottom: 10px;
+  color: #ffffff;
+  font-size: 1.2rem;
+}
+
+#leaderboard ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+#leaderboard li {
+  padding: 6px 8px;
+  border-bottom: 1px solid #ddd;
+  color: #fff;
+}
+
+#leaderboard li span.score {
+  float: right;
+  font-weight: bold;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+
 </style>
 </head>
 <body>
@@ -124,7 +171,7 @@
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-app.js";
   import { getDatabase, ref, push, onValue, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/11.8.1/firebase-database.js";
 
-  
+  // Your Firebase config here
   const firebaseConfig = {
     apiKey: "AIzaSyDyVDqDWE_FOOhf0i0Fx2t1UV5DDjHmOQM",
     authDomain: "learning-16286.firebaseapp.com",
@@ -139,7 +186,7 @@
   const db = getDatabase(app);
   const scoresRef = ref(db, "quizScores");
 
-  
+  // Quiz questions
   const questions = [
     {
       question: "What is the capital of India?",
@@ -168,7 +215,7 @@
     }
   ];
 
-  
+  // DOM elements
   const startScreen = document.getElementById("start-screen");
   const quizScreen = document.getElementById("quiz-screen");
   const scoreScreen = document.getElementById("score-screen");
@@ -272,7 +319,7 @@
         leaderboardList.innerHTML = "<li>No scores yet.</li>";
         return;
       }
-    
+      // Sort descending by score
       const sortedScores = Object.values(data)
         .sort((a, b) => b.score - a.score);
 
@@ -289,7 +336,7 @@
     });
   }
 
-
+  // Show start screen initially
   startScreen.style.display = "block";
 </script>
 
